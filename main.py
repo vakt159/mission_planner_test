@@ -62,7 +62,7 @@ def fly_to_b():
         dist = get_distance(loc, B_POS)
         alt = vehicle.location.global_relative_frame.alt
         
-        if dist < 15: break
+        if dist < 30: break
 
         brg = get_bearing(loc, B_POS)
         p_move, r_move = get_vector_components(brg, magnitude=220) 
@@ -73,25 +73,23 @@ def fly_to_b():
         print(f"Dist: {dist:.1f}m | Alt: {alt:.1f}m | Brg: {brg:.1f}", end='\r')
         time.sleep(0.1)
 
-def land_precision():
-    print("\nPrecision Landing...")
-    for _ in range(25):
-        v_n, v_e = vehicle.velocity[0], vehicle.velocity[1]
-        send_stabilize_cmd(v_n*40, -v_e*40, THROTTLE_HOVER)
-        time.sleep(0.1)
 
-    while vehicle.location.global_relative_frame.alt > 0.4:
+def land_precision():
+    while vehicle.location.global_relative_frame.alt > 0.3:
         loc = (vehicle.location.global_frame.lat, vehicle.location.global_frame.lon)
         dist = get_distance(loc, B_POS)
         alt = vehicle.location.global_relative_frame.alt
         
+        v_n, v_e = vehicle.velocity[0], vehicle.velocity[1]
         brg = get_bearing(loc, B_POS)
-        p_corr, r_corr = get_vector_components(brg, magnitude=dist * 20)
-        p_wind, r_wind = get_vector_components(WIND_ORIGIN, magnitude=70)
-        
-        send_stabilize_cmd(p_corr + p_wind, r_corr + r_wind, THROTTLE_HOVER - 150)
-        time.sleep(0.1)
 
+        p_pos, r_pos = get_vector_components(brg, magnitude=min(dist * 12, 80))
+        
+        p_brake = v_n * 40
+        r_brake = v_e * -40
+        
+        send_stabilize_cmd(p_pos + p_brake, r_pos + r_brake, THROTTLE_HOVER - 180)
+        time.sleep(0.1)
 try:
     takeoff(TARGET_ALT)
     fly_to_b()
